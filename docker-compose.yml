@@ -1,10 +1,16 @@
 version: "3"
 
 services:
-  frontent:
+  frontend:
     build:
       context: ./frontend
-    command: ["serve", "-s", "build"]
-    ports:
-      - 3000:3000
     tty: true
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    ports:
+      - 80:80
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./frontend/dist:/usr/share/nginx/html
