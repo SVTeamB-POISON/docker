@@ -1,16 +1,39 @@
 version: "3"
 
 services:
+  backend:
+    container_name: backend
+    build:
+      context: ./backend
+    ports:
+      - 8000:8000
+    volumes:
+      - ./backend/:/backend/
+    expose:
+      - 8000
+
   frontend:
+    container_name: frontend
     build:
       context: ./frontend
+      dockerfile: Dockerfile.prod
+    volumes:
+      - ./frontend/:/frontend
+      - build_folder:/frontend/dist
+      - ./frontend/node_modules/:/frontend/node_modules
     tty: true
 
   nginx:
-    image: nginx:latest
     container_name: nginx
+    build:
+      context: ./nginx
     ports:
       - 80:80
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
-      - ./frontend/dist:/usr/share/nginx/html
+      - build_folder:/var/www/frontend
+    depends_on:
+      - frontend
+      - backend
+
+volumes:
+  build_folder: null
