@@ -10,8 +10,7 @@ services:
     networks:
       - app-tier
 
-  backend:
-    container_name: backend
+  backend: &python
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -19,13 +18,22 @@ services:
       - redis:rd
       - rabbitmq:rb
       - ai:ai
-    command: "celery -A flower worker --loglevel=INFO"
     ports:
       - "8000:8000"
+    expose:
+      - "8000"
     networks:
       - app-tier
     depends_on:
       - redis
+      - rabbitmq
+      - celery
+
+  celery:
+    <<: *python
+    command: "celery -A flower worker --loglevel=INFO"
+    ports: []
+    depends_on:
       - rabbitmq
 
   frontend:
