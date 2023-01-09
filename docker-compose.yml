@@ -1,16 +1,43 @@
 version: "3"
 
 services:
-  backend:
+  ai:
+    build:
+      context: ./AI
+      dockerfile: Dockerfile
+    ports:
+      - "5001:5001"
+    networks:
+      - app-tier
+
+  backend: &python
     container_name: backend
     build:
       context: ./backend
+    links:
+      - redis:rd
+      - rabbitmq:rb
+      - ai:ai
     ports:
       - 8000:8000
     volumes:
       - ./backend/:/backend/
     expose:
       - 8000
+    networks:
+      - app-tier
+    depends_on:
+      - redis
+      - rabbitmq
+      - celery
+
+  celery:
+    <<: *python
+    container_name: celery
+    command: "celery -A flower worker --loglevel=INFO"
+    ports: []
+    depends_on:
+      - rabbitmq
 
   frontend:
     container_name: frontend
@@ -34,6 +61,26 @@ services:
     depends_on:
       - frontend
       - backend
+    networks:
+      - app-tier
+
+  redis:
+    image: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - app-tier
+
+  rabbitmq:
+    image: rabbitmq
+    ports:
+      - "5672:5672"
+    networks:
+      - app-tier
+
+networks:
+  app-tier:
+    driver: bridge
 
 volumes:
   build_folder: null
