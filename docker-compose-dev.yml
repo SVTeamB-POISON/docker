@@ -1,13 +1,32 @@
 version: "3"
 
 services:
+  ai:
+    build:
+      context: ./AI
+      dockerfile: Dockerfile
+    ports:
+      - "5001:5001"
+    networks:
+      - app-tier
+
   backend:
     container_name: backend
     build:
       context: ./backend
       dockerfile: Dockerfile
+    links:
+      - redis:rd
+      - rabbitmq:rb
+      - ai:ai
+    command: "celery -A flower worker --loglevel=INFO"
     ports:
-      - "8001:8000"
+      - "8000:8000"
+    networks:
+      - app-tier
+    depends_on:
+      - redis
+      - rabbitmq
 
   frontend:
     container_name: frontend
@@ -17,3 +36,21 @@ services:
     ports:
       - "3000:3000"
     tty: true
+
+  redis:
+    image: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - app-tier
+
+  rabbitmq:
+    image: rabbitmq
+    ports:
+      - "5672:5672"
+    networks:
+      - app-tier
+
+networks:
+  app-tier:
+    driver: bridge
