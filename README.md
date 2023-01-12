@@ -1,4 +1,17 @@
+## URL: http://poisonsvb.com
+
+---
+
 ### 서버 시작하기
+
+Backend .env file
+
+- config/.env
+
+```
+DJANGO_SECRET_KEY=
+DJANGO_PASSWORD=qkrdudtlr0128
+```
 
 ```shell
 $ git clone https://github.com/SV-Team-B/docker.git
