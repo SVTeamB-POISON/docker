@@ -41,6 +41,7 @@ services:
 
   frontend:
     container_name: frontend
+    restart: unless_stopped
     build:
       context: ./frontend
       dockerfile: Dockerfile.prod
@@ -56,13 +57,17 @@ services:
       context: ./nginx
     ports:
       - 80:80
+      - 443:443
     volumes:
       - build_folder:/var/www/frontend
+      - ./nginx/certbot/conf:/etc/letsencrypt
+      - ./nginx/certbot/www:/var/www/certbot
     depends_on:
       - frontend
       - backend
     networks:
-      - app-tier
+      - app-tier  
+    command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
 
   redis:
     image: redis
@@ -77,6 +82,15 @@ services:
       - "5672:5672"
     networks:
       - app-tier
+
+  certbot:
+    container_name: certbot
+    image: certbot/certbot:arm32v6-latest
+    restart: unless-stopped
+    volumes:
+      - ./nginx/certbot/conf:/etc/letsencrypt
+      - ./nginx/certbot/www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
 
 networks:
   app-tier:
