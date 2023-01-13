@@ -52,22 +52,25 @@ services:
 
   nginx:
     container_name: nginx
-    restart: unless-stopped
+    restart: "always"
     build:
       context: ./nginx
     ports:
-      - 80:80
-      - 443:443
+      - "80:80"
+      - "443:443"
+    expose:
+      - "80"
+      - "443"
     volumes:
       - build_folder:/var/www/frontend
-      - ./nginx/certbot/conf:/etc/letsencrypt
-      - ./nginx/certbot/www:/var/www/certbot
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
     depends_on:
       - frontend
       - backend
     networks:
       - app-tier  
-    command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
+    command : '/bin/sh -c ''while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g "daemon off;"'''
 
   redis:
     image: redis
@@ -83,16 +86,17 @@ services:
     networks:
       - app-tier
 
-  certbot:
-    container_name: certbot
-    image: certbot/certbot:amd64-v1.20.0
+  certbot:  #certbot 컨테이너 추가 
+    image: certbot/certbot
     restart: unless-stopped
-    volumes:
-      - ./nginx/certbot/conf:/etc/letsencrypt
-      - ./nginx/certbot/www:/var/www/certbot
+    container_name: certbot
+    volumes: 
+        - ./certbot/conf:/etc/letsencrypt    #nginx컨테이너에 certbot컨테이너 연결
+        - ./certbot/www:/var/www/certbot
     depends_on:
-      - nginx   
-    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+        - nginx
+    entrypoint : "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+
 
 networks:
   app-tier:
