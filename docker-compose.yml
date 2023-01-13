@@ -41,7 +41,6 @@ services:
 
   frontend:
     container_name: frontend
-    restart: unless_stopped
     build:
       context: ./frontend
       dockerfile: Dockerfile.prod
@@ -53,6 +52,7 @@ services:
 
   nginx:
     container_name: nginx
+    restart: unless-stopped
     build:
       context: ./nginx
     ports:
