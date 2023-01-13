@@ -10,7 +10,7 @@ Backend .env file
 
 ```
 DJANGO_SECRET_KEY=
-DJANGO_PASSWORD=qkrdudtlr0128
+DJANGO_PASSWORD=
 ```
 
 ```shell
