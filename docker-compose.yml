@@ -52,15 +52,15 @@ services:
 
   nginx:
     container_name: nginx
-    restart: "always"
+    restart: "unless_stopped"
     build:
       context: ./nginx
     ports:
       - "80:80"
       - "443:443"
     expose:
-      - "80"
-      - "443"
+      - 80
+      - 443
     volumes:
       - build_folder:/var/www/frontend
       - ./certbot/conf:/etc/letsencrypt
