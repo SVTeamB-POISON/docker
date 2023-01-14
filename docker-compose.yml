@@ -52,7 +52,7 @@ services:
 
   nginx:
     container_name: nginx
-    restart: "unless_stopped"
+    restart: unless-stopped
     build:
       context: ./nginx
     ports:
