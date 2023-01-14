@@ -1,6 +1,28 @@
 version: "3"
 
 services:
+  prometheus:
+    image: prom/prometheus:v2.14.0
+    volumes:
+      - ./prometheus/:/etc/prometheus/
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    ports:
+      - 9090:9090
+    networks:
+      - app-tier
+    depends_on:
+      - backend
+
+  grafana:
+    image: grafana/grafana:6.5.2
+    ports:
+      - 3060:3000
+    networks:
+      - app-tier
+    depends_on:
+      - backend
+      - prometheus
   ai:
     build:
       context: ./AI
@@ -14,6 +36,7 @@ services:
     container_name: backend
     build:
       context: ./backend
+    command: sh -c "python manage.py migrate && gunicorn --bind 0:8000 config.wsgi:application"
     links:
       - redis:rd
       - rabbitmq:rb
@@ -39,37 +62,37 @@ services:
     depends_on:
       - rabbitmq
 
-  frontend:
-    container_name: frontend
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile.prod
-    volumes:
-      - ./frontend/:/frontend
-      - build_folder:/frontend/dist
-      - ./frontend/node_modules/:/frontend/node_modules
-    tty: true
+  # frontend:
+  #   container_name: frontend
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile.prod
+  #   volumes:
+  #     - ./frontend/:/frontend
+  #     - build_folder:/frontend/dist
+  #     - ./frontend/node_modules/:/frontend/node_modules
+  #   tty: true
 
-  nginx:
-    container_name: nginx
-    restart: unless-stopped
-    build:
-      context: ./nginx
-    ports:
-      - "80:80"
-      - "443:443"
-    expose:
-      - 80
-      - 443
-    volumes:
-      - build_folder:/var/www/frontend
-      - ./certbot/conf:/etc/letsencrypt
-      - ./certbot/www:/var/www/certbot
-    depends_on:
-      - frontend
-      - backend
-    networks:
-      - app-tier  
+  # nginx:
+  #   container_name: nginx
+  #   restart: unless-stopped
+  #   build:
+  #     context: ./nginx
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   expose:
+  #     - 80
+  #     - 443
+  #   volumes:
+  #     - build_folder:/var/www/frontend
+  #     - ./certbot/conf:/etc/letsencrypt
+  #     - ./certbot/www:/var/www/certbot
+  #   depends_on:
+  #     - frontend
+  #     - backend
+  #   networks:
+  #     - app-tier  
 
   redis:
     image: redis
@@ -85,16 +108,16 @@ services:
     networks:
       - app-tier
 
-  certbot:  #certbot 컨테이너 추가 
-    image: certbot/certbot
-    restart: unless-stopped
-    container_name: certbot
-    volumes: 
-        - ./certbot/conf:/etc/letsencrypt    #nginx컨테이너에 certbot컨테이너 연결
-        - ./certbot/www:/var/www/certbot
-    depends_on:
-        - nginx
-    entrypoint : "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+  # certbot:  #certbot 컨테이너 추가 
+  #   image: certbot/certbot
+  #   restart: unless-stopped
+  #   container_name: certbot
+  #   volumes: 
+  #       - ./certbot/conf:/etc/letsencrypt    #nginx컨테이너에 certbot컨테이너 연결
+  #       - ./certbot/www:/var/www/certbot
+  #   depends_on:
+  #       - nginx
+  #   entrypoint : "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
 
 
 networks:
