@@ -45,6 +45,7 @@ services:
       - 8000:8000
     volumes:
       - ./backend/:/backend/
+      - ./backend/static:/backend/static
     expose:
       - 8000
     networks:
@@ -88,6 +89,7 @@ services:
       - build_folder:/var/www/frontend
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
+      - ./backend/static:/backend/static
     depends_on:
       - frontend
       - backend
