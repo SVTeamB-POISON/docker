@@ -23,7 +23,7 @@ jobs: # 아래의 jobs를 수행
         with:
           host: ${{ secrets.HOST }}
           username: ubuntu
-          key: ${{ secrets.KEY }}
+          password: ${{ secrets.PASSWORD }}
           script: mkdir -p /home/ubuntu/srv/ubuntu
 
       - name: copy source via ssh key # 4. ssh key로 현재 푸시된 소스를 서버에 복사 (rsync로 github runners와 ec2 동기화)
