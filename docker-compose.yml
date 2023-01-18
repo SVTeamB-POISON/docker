@@ -14,6 +14,30 @@ services:
     depends_on:
       - backend
 
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node_exporter
+    restart: unless-stopped
+    expose:
+      - 9100
+    ports:
+    - 9100:9100
+    networks:
+      - app-tier
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: cadvisor
+    ports:
+    - 8080:8080
+    volumes:
+    - /:/rootfs:ro
+    - /var/run:/var/run:rw
+    - /sys:/sys:ro
+    - /var/lib/docker/:/var/lib/docker:ro
+    networks:
+      - app-tier
+
   grafana:
     image: grafana/grafana:6.5.2
     ports:
@@ -45,6 +69,7 @@ services:
       - 8000:8000
     volumes:
       - ./backend/:/backend/
+      - ./backend/static:/backend/static
     expose:
       - 8000
     networks:
@@ -88,6 +113,7 @@ services:
       - build_folder:/var/www/frontend
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
+      - ./backend/static:/backend/static
     depends_on:
       - frontend
       - backend
