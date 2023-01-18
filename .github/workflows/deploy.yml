@@ -1,75 +1,24 @@
-name: Deploy
+name: Deploy Project
+
 on:
   push:
-    branches: ["develop"]
-jobs: # 아래의 jobs를 수행
+    branches:
+      - develop
+
+permissions:
+  contents: read
+
+jobs:
   build:
-    name: Build
-    runs-on: ubuntu-latest # 여러 OS 중 우분투 환경 선택
+    runs-on: ubuntu-latest
+
     steps:
-      - name: checkout # 1. develop 브랜치로 checkout
-        uses: actions/checkout@master
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          submodules: true
-
-      - name: create env file # 2. 깃헙 settings > secrets 에 올려놓은 비밀 값을 복사해 .env 파일로 생성
-        run: |
-          touch .env
-          echo "${{ secrets.BACKEND_ENV }}" >> .env
-
-      - name: create remote directory # 3. ec2 서버에 접속해 리모트 디렉토리 생성
+      - uses: actions/checkout@v2
+      - name: Run scripts in server
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ secrets.HOST }}
-          username: ubuntu
           password: ${{ secrets.PASSWORD }}
-          script: mkdir -p /home/ubuntu/srv/ubuntu
-
-      - name: copy source via ssh key # 4. ssh key로 현재 푸시된 소스를 서버에 복사 (rsync로 github runners와 ec2 동기화)
-        uses: burnett01/rsync-deployments@4.1
-        with:
-          switches: -avzr --delete
-          remote_path: /home/ubuntu/srv/ubuntu/
-          remote_host: ${{ secrets.HOST }}
-          remote_user: ubuntu
-          remote_key: ${{ secrets.KEY }}
-
-      - name: executing remote ssh commands using password # 5. 서버로 접속해 deploy.sh 파일 실행
-        uses: appleboy/ssh-action@master
-        with:
           host: ${{ secrets.HOST }}
-          username: ubuntu
-          key: ${{ secrets.KEY }}
-          script: |
-            sh /home/ubuntu/srv/ubuntu/config/deploy.sh
-
-# name: deploy
-
-# on:
-#   push:
-#     branches:
-#       - develop
-#   workflow_dispatch:
-#     # 값도 받을 수 있습니다. region, env 말고 원하시는 값들을 받을 수도 있겠죠?
-#     inputs:
-#       region:
-#         required: true
-#         type: string
-#       env:
-#         required: true
-#         type: string
-# jobs:
-#   AUTO_DEPLOY:
-#     runs-on: ubuntu-latest
-
-#     steps:
-#       - uses: actions/checkout@v2
-#       - name: Run scripts in server
-#         uses: appleboy/ssh-action@master
-#         with:
-#           password: ${{ secrets.PASSWORD }}
-#           host: ${{ secrets.HOST }}
-#           username: ${{ secrets.USER_NAME }}
-#           port: ${{ secrets.PORT }}
-#           script: ${{ secrets.SCRIPT }}
+          username: ${{ secrets.USER_NAME }}
+          port: ${{ secrets.PORT }}
+          script: ${{ secrets.SCRIPT }}
