@@ -67,7 +67,7 @@ jobs:
       - name: Run scripts in server
         uses: appleboy/ssh-action@master
         with:
-          # password: ${{ secrets.PASSWORD }}
+          key: ${{ secrets.KEY }}
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USER_NAME }}
           port: ${{ secrets.PORT }}
