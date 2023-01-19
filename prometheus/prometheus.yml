@@ -7,14 +7,12 @@ rule_files:
 scrape_configs:
   - job_name: backend
     metrics_path: api/metrics
-    scheme
     static_configs:
       - targets:
           - poisonsvb.com
   - job_name: cadvisor
     static_configs:
       - targets:
-          - poisonsvb.com:8080
           - cadvisor:8080
   - job_name: node-exporter
     static_configs:
