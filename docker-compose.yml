@@ -5,8 +5,9 @@ services:
     image: prom/prometheus:v2.14.0
     volumes:
       - ./prometheus/:/etc/prometheus/
+      - prom_store:/prometheus
     command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
+      - "--config.file=/etc/prometheus/prometheus.yml"
     ports:
       - 9090:9090
     networks:
@@ -21,7 +22,7 @@ services:
     expose:
       - 9100
     ports:
-    - 9100:9100
+      - 9100:9100
     networks:
       - app-tier
 
@@ -29,12 +30,12 @@ services:
     image: gcr.io/cadvisor/cadvisor:latest
     container_name: cadvisor
     ports:
-    - 8080:8080
+      - 8080:8080
     volumes:
-    - /:/rootfs:ro
-    - /var/run:/var/run:rw
-    - /sys:/sys:ro
-    - /var/lib/docker/:/var/lib/docker:ro
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
     networks:
       - app-tier
 
@@ -118,7 +119,7 @@ services:
       - frontend
       - backend
     networks:
-      - app-tier  
+      - app-tier
 
   redis:
     image: redis
@@ -134,17 +135,16 @@ services:
     networks:
       - app-tier
 
-  certbot:  #certbot 컨테이너 추가 
+  certbot: #certbot 컨테이너 추가
     image: certbot/certbot
     restart: unless-stopped
     container_name: certbot
-    volumes: 
-        - ./certbot/conf:/etc/letsencrypt    #nginx컨테이너에 certbot컨테이너 연결
-        - ./certbot/www:/var/www/certbot
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt #nginx컨테이너에 certbot컨테이너 연결
+      - ./certbot/www:/var/www/certbot
     depends_on:
-        - nginx
-    entrypoint : "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
-
+      - nginx
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
 
 networks:
   app-tier:
@@ -152,3 +152,6 @@ networks:
 
 volumes:
   build_folder: null
+  prom_store:
+    external: true
+
