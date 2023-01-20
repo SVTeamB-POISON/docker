@@ -5,7 +5,7 @@ services:
     image: prom/prometheus
     volumes:
       - ./prometheus/:/etc/prometheus/
-      - prom_store:/prometheus
+      - promet_store:/prometheus
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
     ports:
@@ -154,7 +154,7 @@ networks:
 
 volumes:
   build_folder: null
-  prom_store:
+  promet_store:
     external: true
   grafana_store:
     external: true
