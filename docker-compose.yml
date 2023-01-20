@@ -156,3 +156,5 @@ volumes:
   build_folder: null
   prom_store:
     external: true
+  grafana_store:
+    external: true
