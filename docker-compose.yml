@@ -2,7 +2,7 @@ version: "3"
 
 services:
   prometheus:
-    image: prom/prometheus:v2.14.0
+    image: prom/prometheus
     volumes:
       - ./prometheus/:/etc/prometheus/
       - prom_store:/prometheus
@@ -48,6 +48,8 @@ services:
     depends_on:
       - backend
       - prometheus
+    volumes:
+      - grafana_store:/var/lib/grafana
   ai:
     build:
       context: ./AI
@@ -154,4 +156,3 @@ volumes:
   build_folder: null
   prom_store:
     external: true
-
