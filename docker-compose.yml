@@ -40,7 +40,7 @@ services:
       - app-tier
 
   grafana:
-    image: grafana/grafana:6.5.2
+    image: grafana/grafana:8.5.5
     ports:
       - 3060:3000
     networks:
