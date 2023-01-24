@@ -50,14 +50,6 @@ services:
       - prometheus
     volumes:
       - grafana_store:/var/lib/grafana
-  # ai:
-  #   build:
-  #     context: ./AI
-  #     dockerfile: Dockerfile
-  #   ports:
-  #     - "5001:5001"
-  #   networks:
-  #     - app-tier
 
   backend: &python
     container_name: backend
@@ -67,7 +59,6 @@ services:
     links:
       - redis:rd
       - rabbitmq:rb
-#      - ai:ai
     ports:
       - 8000:8000
     volumes:
@@ -85,7 +76,7 @@ services:
   celery:
     <<: *python
     container_name: celery
-    command: "celery -A flower worker --loglevel=INFO"
+    command: "celery -A flower worker --loglevel=INFO --autoscale=10,3"
     ports: []
     depends_on:
       - rabbitmq
