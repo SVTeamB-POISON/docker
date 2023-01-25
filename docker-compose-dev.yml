@@ -1,6 +1,40 @@
 version: "3"
 
 services:
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - ./prometheus/:/etc/prometheus/
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+    ports:
+      - 9090:9090
+    networks:
+      - app-tier
+    depends_on:
+      - backend
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node_exporter
+    restart: unless-stopped
+    expose:
+      - 9100
+    ports:
+      - 9100:9100
+    networks:
+      - app-tier
+
+  grafana:
+    image: grafana/grafana:8.5.5
+    ports:
+      - 3060:3000
+    networks:
+      - app-tier
+    depends_on:
+      - backend
+      - prometheus
+
   ai:
     build:
       context: ./AI
@@ -11,17 +45,21 @@ services:
       - app-tier
 
   backend: &python
+    container_name: backend
     build:
       context: ./backend
-      dockerfile: Dockerfile
+    command: sh -c "python manage.py migrate && gunicorn --bind 0:8000 config.wsgi:application"
     links:
       - redis:rd
       - rabbitmq:rb
       - ai:ai
     ports:
-      - "8000:8000"
+      - 8000:8000
+    volumes:
+      - ./backend/:/backend/
+      - ./backend/static:/backend/static
     expose:
-      - "8000"
+      - 8000
     networks:
       - app-tier
     depends_on:
@@ -31,6 +69,7 @@ services:
 
   celery:
     <<: *python
+    container_name: celery
     command: "celery -A flower worker --loglevel=INFO"
     ports: []
     depends_on:
@@ -40,10 +79,34 @@ services:
     container_name: frontend
     build:
       context: ./frontend
-      dockerfile: Dockerfile.dev
-    ports:
-      - "3000:3000"
+      dockerfile: Dockerfile.prod
+    volumes:
+      - ./frontend/:/frontend
+      - build_folder:/frontend/dist
+      - ./frontend/node_modules/:/frontend/node_modules
     tty: true
+
+  nginx:
+    container_name: nginx
+    restart: unless-stopped
+    build:
+      context: ./nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    expose:
+      - 80
+      - 443
+    volumes:
+      - build_folder:/var/www/frontend
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+      - ./backend/static:/backend/static
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - app-tier
 
   redis:
     image: redis
@@ -59,6 +122,82 @@ services:
     networks:
       - app-tier
 
+  elasticsearch:
+    build:
+      context: ./logging/elasticsearch
+      args:
+        ELASTIC_VERSION: 8.5.2
+    volumes:
+      - ./logging/elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro,Z
+      - elasticsearch:/usr/share/elasticsearch/data:Z
+    ports:
+      - 9200:9200
+      - 9300:9300
+    environment:
+      node.name: elasticsearch
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+      # Bootstrap password.
+      # Used to initialize the keystore during the initial startup of
+      # Elasticsearch. Ignored on subsequent runs.
+      ELASTIC_PASSWORD: changeme
+      # Use single node discovery in order to disable production mode and avoid bootstrap checks.
+      # see: https://www.elastic.co/guide/en/elasticsearch/reference/current/bootstrap-checks.html
+      discovery.type: single-node
+    restart: unless-stopped
+
+  logstash:
+    build:
+      context: ./logging/logstash
+      args:
+        ELASTIC_VERSION: 8.5.2
+    volumes:
+      - ./logging/logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml:ro,Z
+      - ./logging/logstash/pipeline:/usr/share/logstash/pipeline:ro,Z
+    ports:
+      - 5044:5044
+      - 50000:50000/tcp
+      - 50000:50000/udp
+      - 9600:9600
+    environment:
+      LS_JAVA_OPTS: -Xms256m -Xmx256m
+      LOGSTASH_INTERNAL_PASSWORD: changeme
+    depends_on:
+      - elasticsearch
+    restart: unless-stopped
+
+  kibana:
+    build:
+      context: ./logging/kibana
+      args:
+        ELASTIC_VERSION: 8.5.2
+    volumes:
+      - ./logging/kibana/config/kibana.yml:/usr/share/kibana/config/kibana.yml:ro,Z
+    ports:
+      - 5601:5601
+    environment:
+      KIBANA_SYSTEM_PASSWORD: changeme
+    depends_on:
+      - elasticsearch
+    restart: unless-stopped
+
+  filebeat:
+    build:
+      context: ./logging/filebeat
+      args:
+        ELASTIC_VERSION: 8.5.2
+    entrypoint: "filebeat -e -strict.perms=false"
+    volumes:
+      - ./logging/filebeat/config/filebeat.yml:/usr/share/filebeat/filebeat.yml
+      - ./nginx/log:/var/log/nginx # nginx log path (require same option on nginx container)
+    depends_on:
+      - logstash
+      - elasticsearch
+      - kibana
+
 networks:
   app-tier:
     driver: bridge
+
+volumes:
+  build_folder: null
+  elasticsearch:
