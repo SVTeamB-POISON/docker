@@ -102,6 +102,7 @@ services:
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
       - ./backend/static:/backend/static
+      - ./nginx/log:/var/log/nginx
     depends_on:
       - frontend
       - backend
@@ -124,12 +125,11 @@ services:
 
   elasticsearch:
     build:
-      context: ./logging/elasticsearch
+      context: logging/elasticsearch
       args:
         ELASTIC_VERSION: 8.5.2
     volumes:
       - ./logging/elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro,Z
-      - elasticsearch:/usr/share/elasticsearch/data:Z
     ports:
       - 9200:9200
       - 9300:9300
@@ -147,7 +147,7 @@ services:
 
   logstash:
     build:
-      context: ./logging/logstash
+      context: logging/logstash
       args:
         ELASTIC_VERSION: 8.5.2
     volumes:
@@ -167,7 +167,7 @@ services:
 
   kibana:
     build:
-      context: ./logging/kibana
+      context: logging/kibana
       args:
         ELASTIC_VERSION: 8.5.2
     volumes:
@@ -182,7 +182,7 @@ services:
 
   filebeat:
     build:
-      context: ./logging/filebeat
+      context: logging/filebeat
       args:
         ELASTIC_VERSION: 8.5.2
     entrypoint: "filebeat -e -strict.perms=false"
