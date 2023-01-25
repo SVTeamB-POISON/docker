@@ -6,4 +6,4 @@
 	url = https://github.com/SV-Team-B/backend.git
 [submodule "AI"]
 	path = AI
-	url = https://github.com/SV-Team-B/AI.git
+	url = https://github.com/SVTeamB-POISON/AI.git
