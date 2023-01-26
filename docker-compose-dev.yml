@@ -58,6 +58,7 @@ services:
     volumes:
       - ./backend/:/backend/
       - ./backend/static:/backend/static
+      - ./backend/log:/var/log/backend
     expose:
       - 8000
     networks:
@@ -102,6 +103,7 @@ services:
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
       - ./backend/static:/backend/static
+      - ./nginx/log:/var/log/nginx
     depends_on:
       - frontend
       - backend
@@ -124,11 +126,11 @@ services:
 
   elasticsearch:
     build:
-      context: ./logging/elasticsearch
+      context: elk/elasticsearch
       args:
         ELASTIC_VERSION: 8.5.2
     volumes:
-      - ./logging/elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro,Z
+      - ./elk/elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro,Z
       - elasticsearch:/usr/share/elasticsearch/data:Z
     ports:
       - 9200:9200
@@ -147,12 +149,12 @@ services:
 
   logstash:
     build:
-      context: ./logging/logstash
+      context: elk/logstash
       args:
         ELASTIC_VERSION: 8.5.2
     volumes:
-      - ./logging/logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml:ro,Z
-      - ./logging/logstash/pipeline:/usr/share/logstash/pipeline:ro,Z
+      - ./elk/logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml:ro,Z
+      - ./elk/logstash/pipeline:/usr/share/logstash/pipeline:ro,Z
     ports:
       - 5044:5044
       - 50000:50000/tcp
@@ -167,11 +169,11 @@ services:
 
   kibana:
     build:
-      context: ./logging/kibana
+      context: elk/kibana
       args:
         ELASTIC_VERSION: 8.5.2
     volumes:
-      - ./logging/kibana/config/kibana.yml:/usr/share/kibana/config/kibana.yml:ro,Z
+      - ./elk/kibana/config/kibana.yml:/usr/share/kibana/config/kibana.yml:ro,Z
     ports:
       - 5601:5601
     environment:
@@ -182,12 +184,12 @@ services:
 
   filebeat:
     build:
-      context: ./logging/filebeat
+      context: elk/filebeat
       args:
         ELASTIC_VERSION: 8.5.2
     entrypoint: "filebeat -e -strict.perms=false"
     volumes:
-      - ./logging/filebeat/config/filebeat.yml:/usr/share/filebeat/filebeat.yml
+      - ./elk/filebeat/config/filebeat.yml:/usr/share/filebeat/filebeat.yml
       - ./nginx/log:/var/log/nginx # nginx log path (require same option on nginx container)
     depends_on:
       - logstash
