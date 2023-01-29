@@ -64,10 +64,6 @@ services:
     build:
       context: ./backend
     command: sh -c "python manage.py migrate && gunicorn --bind 0:8000 config.wsgi:application"
-    links:
-      - redis:rd
-      - rabbitmq:rb
-      - ai:ai
     ports:
       - 8000:8000
     volumes:
@@ -150,7 +146,7 @@ services:
 
 networks:
   app-tier:
-    driver: bridge
+    driver: bridge #localhost : 172.17.0.1
 
 volumes:
   build_folder: null
