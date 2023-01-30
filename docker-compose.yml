@@ -63,7 +63,7 @@ services:
     container_name: backend
     build:
       context: ./backend
-    command: sh -c "python manage.py migrate && gunicorn --bind 0:8000 config.wsgi:application"
+    command: sh -c "gunicorn --bind 0:8000 config.wsgi:application --workers 3 --max-requests 100"
     ports:
       - 8000:8000
     volumes:
